@@ -1,18 +1,21 @@
-use bitvec::vec::BitVec;
-
+mod string;
+mod types;
 
 // String that represents a name or identifier given to an object according to FIRRTL spec
+// [a-zA-Z_][\w_]+
 pub type IDStr = String;
 
 /// FIRRTL info item, without the surrounding `@[]`.
 pub type Info = String;
 
+#[derive(Debug, Clone)]
 pub struct Circuit {
     id: IDStr,
     infos: Vec<Info>,
     modules: Vec<Module>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Module {
     id: IDStr,
     infos: Vec<Info>,
@@ -20,6 +23,7 @@ pub struct Module {
     stmt: Stmt,
 }
 
+#[derive(Debug, Clone)]
 pub struct Port {
     direction: Direction,
     id: IDStr,
@@ -27,11 +31,13 @@ pub struct Port {
     infos: Vec<Info>,
 }
 
+#[derive(Debug, Clone)]
 pub enum Direction {
     I,
     O
 }
 
+#[derive(Debug, Clone)]
 pub enum Type {
     UInt {
         width: Option<usize>
@@ -56,16 +62,20 @@ pub enum Type {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum Field {
     Flipped(FieldInner),
     Default(FieldInner)
 }
 
+#[derive(Debug, Clone)]
 pub struct FieldInner {
     id: IDStr,
-    ty: Type
+    ty: Type,
+    infos: Vec<Info>
 }
 
+#[derive(Debug, Clone)]
 pub enum Stmt {
     Wire(Wire),
     Reg(Reg),
@@ -83,12 +93,14 @@ pub enum Stmt {
     Group(Vec<Stmt>)
 }
 
+#[derive(Debug, Clone)]
 pub struct Wire {
     id: IDStr,
     ty: Type,
     infos: Vec<Info>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Reg {
     id: IDStr,
     ty: Type,
@@ -97,11 +109,13 @@ pub struct Reg {
     infos: Vec<Info>,
 }
 
+#[derive(Debug, Clone)]
 pub struct RegInit {
     signal: Expr,
     val: Expr
 }
 
+#[derive(Debug, Clone)]
 pub struct Mem {
     id: IDStr,
     infos: Vec<Info>,
@@ -109,6 +123,7 @@ pub struct Mem {
 
 }
 
+#[derive(Debug, Clone)]
 pub struct MemOpts {
     data_type: Type,
     depth: usize,
@@ -120,6 +135,7 @@ pub struct MemOpts {
     rw_ports: Vec<IDStr>
 }
 
+#[derive(Debug, Clone)]
 pub enum ReadUnderWrite {
     Old,
     New,
@@ -127,33 +143,39 @@ pub enum ReadUnderWrite {
 }
 
 
+#[derive(Debug, Clone)]
 pub struct Instance {
     id: String,
     infos: Vec<Info>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Node {
     id: String,
     rhs: Expr,
     infos: Vec<Info>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Connect {
     lhs: Expr,
     rhs: Expr,
     infos: Vec<Info>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Invalidate {
     lhs: Expr,
     infos: Vec<Info>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Attatch {
     exprs: Expr,
     infos: Vec<Info>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Conditional {
     cond: Expr,
     infos: Vec<Info>,
@@ -161,6 +183,7 @@ pub struct Conditional {
     if_false: Box<Stmt>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Stop {
     clk: Expr,
     halt: Expr,
@@ -169,6 +192,7 @@ pub struct Stop {
     infos: Vec<Info>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Printf {
    clk: Expr,
    print_signal: Expr,
@@ -176,10 +200,12 @@ pub struct Printf {
    params: Vec<Expr>
 }
 
+#[derive(Debug, Clone)]
 pub struct Empty {
     infos: Vec<Info>
 }
 
+#[derive(Debug, Clone)]
 pub enum Expr {
     Literal(Literal),
     Ref(IDStr),
@@ -191,16 +217,19 @@ pub enum Expr {
     PrimOp(PrimOp),
 }
 
+#[derive(Debug, Clone)]
 pub enum Literal {
     UInt(LitVal),
     SInt(LitVal)
 }
 
+#[derive(Debug, Clone)]
 pub enum LitVal {
-    Bits(BitVec),
+    Bits(Vec<u8>),
     Int(usize),
 }
 
+#[derive(Debug, Copy, Clone)]
 pub enum PrimOp {
     Add,
     Sub,
@@ -214,8 +243,8 @@ pub enum PrimOp {
     Eq,
     Neq,
     Pad,
-    AsUint,
-    AsSint,
+    AsUInt,
+    AsSInt,
     AsClock,
     Shl,
     Shr,
