@@ -1,5 +1,6 @@
 mod string;
 mod types;
+mod expr;
 
 // String that represents a name or identifier given to an object according to FIRRTL spec
 // [a-zA-Z_][\w_]+
@@ -212,19 +213,61 @@ pub enum Expr {
     DynAccess(Box<Expr>, Box<Expr>),
     Mux(Box<Expr>, Box<Expr>, Box<Expr>),
     CondValid(Box<Expr>, Box<Expr>),
-    PrimOp(PrimOp),
+    PrimOp(PrimOpExpr),
 }
 
 #[derive(Debug, Clone)]
 pub enum Literal {
-    UInt(LitVal),
-    SInt(LitVal),
+    UInt(LitVal, Option<usize>),
+    SInt(LitVal, Option<usize>),
 }
 
 #[derive(Debug, Clone)]
 pub enum LitVal {
-    Bits(Vec<u8>),
-    Int(usize),
+    Hex(String),
+    Oct(String),
+    Bin(String),
+    Dec(String),
+}
+
+#[derive(Debug, Clone)]
+pub enum PrimOpExpr {
+    Add(Box<Expr>, Box<Expr>),
+    Sub(Box<Expr>, Box<Expr>),
+    Mul(Box<Expr>, Box<Expr>),
+    Div(Box<Expr>, Box<Expr>),
+    Mod(Box<Expr>, Box<Expr>),
+    Lt(Box<Expr>, Box<Expr>),
+    Leq(Box<Expr>, Box<Expr>),
+    Gt(Box<Expr>, Box<Expr>),
+    Geq(Box<Expr>, Box<Expr>),
+    Eq(Box<Expr>, Box<Expr>),
+    Neq(Box<Expr>, Box<Expr>),
+    Pad(Box<Expr>, usize),
+    AsUInt(Box<Expr>),
+    AsSInt(Box<Expr>),
+    AsFixed(Box<Expr>),
+    AsClock(Box<Expr>),
+    Shl(Box<Expr>, usize),
+    Shr(Box<Expr>, usize),
+    DynShl(Box<Expr>, Box<Expr>),
+    DynShr(Box<Expr>, Box<Expr>),
+    ArithCvtSigned(Box<Expr>),
+    Neg(Box<Expr>),
+    Not(Box<Expr>),
+    And(Box<Expr>, Box<Expr>),
+    Or(Box<Expr>, Box<Expr>),
+    Xor(Box<Expr>, Box<Expr>),
+    Andr(Box<Expr>),
+    Orr(Box<Expr>),
+    Xorr(Box<Expr>),
+    Concat(Box<Expr>, Box<Expr>),
+    Bits(Box<Expr>, usize, usize),
+    Head(Box<Expr>, usize),
+    Tail(Box<Expr>, usize),
+    IncP(Box<Expr>, usize),
+    DecP(Box<Expr>, usize),
+    SetP(Box<Expr>, usize)
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -244,6 +287,7 @@ pub enum PrimOp {
     AsUInt,
     AsSInt,
     AsClock,
+    AsFixed,
     Shl,
     Shr,
     DynShl,
@@ -261,7 +305,11 @@ pub enum PrimOp {
     Bits,
     Head,
     Tail,
+    IncP,
+    DecP,
+    SetP
 }
+
 
 #[cfg(test)]
 mod tests {

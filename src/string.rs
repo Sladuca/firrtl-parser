@@ -1,9 +1,9 @@
-use crate::{IDStr, Info, Literal, Module, PrimOp};
+use crate::{IDStr, Info, LitVal, Module, PrimOp};
 
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while},
-    character::complete::space0,
+    character::complete::digit1,
     combinator::{opt, success, value},
     error::ErrorKind,
     multi::separated_list0,
@@ -24,53 +24,44 @@ lazy_static! {
     pub static ref ID_REGEX: Regex = Regex::new(r"[a-zA-Z_][\w_]*").unwrap();
 }
 
-fn parse_dec_literal_str(input: &str) -> IResult<&str, &str> {
-    let (rest, groups) = re_capture(DEC_REGEX.clone())(input)?;
-    Ok((rest, groups[0]))
-}
+pub fn parse_litval<'a>(input: &'a str) -> IResult<&'a str, LitVal> {
+    let dec = |input: &'a str| {
+        let inner = re_capture::<'a>(DEC_REGEX.clone());
+        let (rest, groups) = inner(input)?;
+        Ok((rest, LitVal::Dec(groups[0].to_string())))
+    };
 
-fn parse_int_literal_str<'a>(input: &'a str) -> IResult<&'a str, &'a str> {
     let bin = |input: &'a str| {
         let inner = re_capture::<'a>(BIN_REGEX.clone());
         let (rest, groups) = inner(input)?;
-        Ok((rest, groups[0]))
+        Ok((rest, LitVal::Bin(groups[0].to_string())))
     };
 
     let hex = |input: &'a str| {
         let inner = re_capture::<'a>(HEX_REGEX.clone());
         let (rest, groups) = inner(input)?;
-        Ok((rest, groups[0]))
+        Ok((rest, LitVal::Hex(groups[0].to_string())))
     };
 
     let oct = |input: &'a str| {
         let inner = re_capture::<'a>(OCT_REGEX.clone());
         let (rest, groups) = inner(input)?;
-        Ok((rest, groups[0]))
+        Ok((rest, LitVal::Oct(groups[0].to_string())))
     };
 
-    alt((bin, hex, oct, parse_dec_literal_str))(input)
+    alt((bin, hex, oct, dec))(input)
 }
 
-fn parse_str_sint_literal(input: &str) -> IResult<&str, Literal> {
-    let (rest, lit_str) = parse_int_literal_str(input)?;
-    let (sign, magnitude) = match &lit_str[0..1] {
-        "-" => (-1, &lit_str[1..]),
-        _ => (1, &lit_str[..]),
-    };
-
-    // TODO: use a crate to parse magnitude into a Vec<u8>
-    unimplemented!()
-}
-
-pub fn parse_str_uint_literal(input: &str) -> IResult<&str, Literal> {
-    let (rest, lit_str) = parse_int_literal_str(input)?;
-
-    // TODO: use a crate to parse lit_str into a Vec<u8>
-    unimplemented!()
-}
 
 fn parse_info(input: &str) -> IResult<&str, Info> {
-    let (rest, info_str) = preceded(tag("&"), delimited(tag("["), is_not("]"), tag("]")))(input)?;
+    let (rest, info_str) = preceded(
+        tag("&"),
+        delimited(
+            tag("["),
+            is_not("]"),
+            tag("]")
+        )
+    )(input)?;
 
     Ok((rest, info_str.to_string()))
 }
@@ -84,7 +75,7 @@ pub fn parse_id(input: &str) -> IResult<&str, IDStr> {
     Ok((rest, id_str.to_string()))
 }
 
-pub fn parse_primop(input: &str) -> IResult<&str, PrimOp> {
+pub fn parse_primop_name(input: &str) -> IResult<&str, PrimOp> {
     let add = preceded(tag("add"), success(PrimOp::Add));
     let sub = preceded(tag("sub"), success(PrimOp::Sub));
     let mul = preceded(tag("mul"), success(PrimOp::Mul));
@@ -98,6 +89,7 @@ pub fn parse_primop(input: &str) -> IResult<&str, PrimOp> {
     let pad = preceded(tag("pad"), success(PrimOp::Pad));
     let as_uint = preceded(tag("asUInt"), success(PrimOp::AsUInt));
     let as_sint = preceded(tag("asSInt"), success(PrimOp::AsSInt));
+    let as_fixed = preceded(tag("asFixed"), success(PrimOp::AsFixed));
     let as_clock = preceded(tag("asClock"), success(PrimOp::AsClock));
     let shl = preceded(tag("shl"), success(PrimOp::Shl));
     let shr = preceded(tag("shr"), success(PrimOp::Shr));
@@ -116,20 +108,27 @@ pub fn parse_primop(input: &str) -> IResult<&str, PrimOp> {
     let bits = preceded(tag("bits"), success(PrimOp::Bits));
     let head = preceded(tag("head"), success(PrimOp::Head));
     let tail = preceded(tag("tail"), success(PrimOp::Tail));
+    let incp = preceded(tag("incp"), success(PrimOp::IncP));
+    let decp = preceded(tag("decp"), success(PrimOp::DecP));
+    let setp = preceded(tag("setp"), success(PrimOp::SetP));
 
     alt((
         alt((add, sub, mul, div, _mod)),
         alt((lt, gt, geq, eq, neq)),
-        alt((pad, as_uint, as_sint, as_clock, cvt)),
+        alt((pad, as_uint, as_sint, as_fixed, as_clock, cvt)),
         alt((
             shl, shr, dyn_shl, dyn_shr, neg, not, and, or, xor, andr, orr, xorr,
         )),
         alt((concat, bits, head, tail)),
+        alt((incp, decp, setp))
     ))(input)
 }
 
 pub fn parse_decimal_usize(input: &str) -> IResult<&str, usize> {
-    unimplemented!()
+    let (rest, dec_str) = digit1(input)?;
+
+    // guranteed not to fail bc dec_str is always an ascii digit 0-9
+    Ok((rest, dec_str.parse().unwrap()))
 }
 
 pub fn parse_width(input: &str) -> IResult<&str, usize> {
