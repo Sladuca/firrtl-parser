@@ -7,9 +7,9 @@ use crate::{
 };
 
 use nom::{
+    branch::alt,
     bytes::complete::tag,
     combinator::{opt, success},
-    branch::{alt},
     multi::separated_list1,
     regexp::str::re_find,
     sequence::{delimited, preceded, terminated, tuple},
@@ -90,7 +90,6 @@ pub fn parse_type(input: &str) -> IResult<&str, Type> {
         parse_clock_type,
         parse_analog_type,
         parse_bundle,
-        parse_vector
-
+        parse_vector,
     ))(input)
 }

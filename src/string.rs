@@ -52,16 +52,8 @@ pub fn parse_litval<'a>(input: &'a str) -> IResult<&'a str, LitVal> {
     alt((bin, hex, oct, dec))(input)
 }
 
-
 fn parse_info(input: &str) -> IResult<&str, Info> {
-    let (rest, info_str) = preceded(
-        tag("&"),
-        delimited(
-            tag("["),
-            is_not("]"),
-            tag("]")
-        )
-    )(input)?;
+    let (rest, info_str) = preceded(tag("&"), delimited(tag("["), is_not("]"), tag("]")))(input)?;
 
     Ok((rest, info_str.to_string()))
 }
@@ -120,7 +112,7 @@ pub fn parse_primop_name(input: &str) -> IResult<&str, PrimOp> {
             shl, shr, dyn_shl, dyn_shr, neg, not, and, or, xor, andr, orr, xorr,
         )),
         alt((concat, bits, head, tail)),
-        alt((incp, decp, setp))
+        alt((incp, decp, setp)),
     ))(input)
 }
 

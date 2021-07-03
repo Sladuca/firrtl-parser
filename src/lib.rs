@@ -1,6 +1,6 @@
+mod expr;
 mod string;
 mod types;
-mod expr;
 
 // String that represents a name or identifier given to an object according to FIRRTL spec
 // [a-zA-Z_][\w_]+
@@ -267,7 +267,7 @@ pub enum PrimOpExpr {
     Tail(Box<Expr>, usize),
     IncP(Box<Expr>, usize),
     DecP(Box<Expr>, usize),
-    SetP(Box<Expr>, usize)
+    SetP(Box<Expr>, usize),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -307,9 +307,8 @@ pub enum PrimOp {
     Tail,
     IncP,
     DecP,
-    SetP
+    SetP,
 }
-
 
 #[cfg(test)]
 mod tests {
