@@ -34,45 +34,45 @@ pub struct Port {
 #[derive(Debug, Clone)]
 pub enum Direction {
     I,
-    O
+    O,
 }
 
 #[derive(Debug, Clone)]
 pub enum Type {
     UInt {
-        width: Option<usize>
+        width: Option<usize>,
     },
     SInt {
-        width: Option<usize>
+        width: Option<usize>,
     },
     Fixed {
         width: Option<usize>,
-        point: Option<usize>
+        point: Option<usize>,
     },
     Clock,
     Analog {
         width: Option<usize>,
     },
     Bundle {
-        fields: Vec<Field> 
+        fields: Vec<Field>,
     },
     Vector {
         ty: Box<Type>,
         len: usize,
-    }
+    },
 }
 
 #[derive(Debug, Clone)]
 pub enum Field {
     Flipped(FieldInner),
-    Default(FieldInner)
+    Default(FieldInner),
 }
 
 #[derive(Debug, Clone)]
 pub struct FieldInner {
     id: IDStr,
     ty: Type,
-    infos: Vec<Info>
+    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone)]
@@ -90,7 +90,7 @@ pub enum Stmt {
     Stop(Stop),
     Printf(Printf),
     Empty(Empty),
-    Group(Vec<Stmt>)
+    Group(Vec<Stmt>),
 }
 
 #[derive(Debug, Clone)]
@@ -112,15 +112,14 @@ pub struct Reg {
 #[derive(Debug, Clone)]
 pub struct RegInit {
     signal: Expr,
-    val: Expr
+    val: Expr,
 }
 
 #[derive(Debug, Clone)]
 pub struct Mem {
     id: IDStr,
     infos: Vec<Info>,
-    opts: MemOpts
-
+    opts: MemOpts,
 }
 
 #[derive(Debug, Clone)]
@@ -132,16 +131,15 @@ pub struct MemOpts {
     read_under_write: ReadUnderWrite,
     r_ports: Vec<IDStr>,
     w_ports: Vec<IDStr>,
-    rw_ports: Vec<IDStr>
+    rw_ports: Vec<IDStr>,
 }
 
 #[derive(Debug, Clone)]
 pub enum ReadUnderWrite {
     Old,
     New,
-    Undefined
+    Undefined,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct Instance {
@@ -194,15 +192,15 @@ pub struct Stop {
 
 #[derive(Debug, Clone)]
 pub struct Printf {
-   clk: Expr,
-   print_signal: Expr,
-   fmt: String,
-   params: Vec<Expr>
+    clk: Expr,
+    print_signal: Expr,
+    fmt: String,
+    params: Vec<Expr>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Empty {
-    infos: Vec<Info>
+    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone)]
@@ -220,7 +218,7 @@ pub enum Expr {
 #[derive(Debug, Clone)]
 pub enum Literal {
     UInt(LitVal),
-    SInt(LitVal)
+    SInt(LitVal),
 }
 
 #[derive(Debug, Clone)]
@@ -262,7 +260,7 @@ pub enum PrimOp {
     Concat,
     Bits,
     Head,
-    Tail
+    Tail,
 }
 
 #[cfg(test)]
