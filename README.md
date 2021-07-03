@@ -2,7 +2,7 @@
 
 **This project is incomplete**.
 
-`firrtl-parser` is a parser for [FIRRTL](https://github.com/chipsalliance/firrtl), the Chips Alliance's "Flexible Intermediate Representation for RTL". It is implemented in rust using the oh-so-wonderful [`nom`](https://crates.io/crates/nomhttps://github.com/Geal/nom) crate.
+`firrtl-parser` is a parser for [FIRRTL](https://github.com/chipsalliance/firrtl), the [Chips Alliance](https://chipsalliance.org/)'s "Flexible Intermediate Representation for RTL". It is implemented in rust using the oh-so-wonderful [`nom`](https://crates.io/crates/nomhttps://github.com/Geal/nom) crate.
 
 You can read the FIRRTL Spec [here](https://raw.githubusercontent.com/chipsalliance/firrtl/master/spec/spec.pdf)
 
