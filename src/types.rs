@@ -9,6 +9,7 @@ use crate::{
 use nom::{
     bytes::complete::tag,
     combinator::{opt, success},
+    branch::{alt},
     multi::separated_list1,
     regexp::str::re_find,
     sequence::{delimited, preceded, terminated, tuple},
@@ -82,5 +83,14 @@ pub fn parse_vector(input: &str) -> IResult<&str, Type> {
 }
 
 pub fn parse_type(input: &str) -> IResult<&str, Type> {
-    unimplemented!()
+    alt((
+        parse_uint_type,
+        parse_sint_type,
+        parse_fixed_point_type,
+        parse_clock_type,
+        parse_analog_type,
+        parse_bundle,
+        parse_vector
+
+    ))(input)
 }
