@@ -5,10 +5,10 @@ use nom::{
     bytes::complete::{is_not, tag, take_while},
     character::complete::digit1,
     combinator::{opt, success, value},
-    error::{ErrorKind, make_error},
+    error::{make_error, ErrorKind},
     multi::separated_list0,
     regexp::str::{re_capture, re_find},
-    sequence::{delimited, preceded, terminated, pair},
+    sequence::{delimited, pair, preceded, terminated},
     IResult,
 };
 
@@ -20,20 +20,33 @@ lazy_static! {
     pub static ref ID_REGEX: Regex = Regex::new(r"^[a-zA-Z_][\w_]*").unwrap();
 }
 
-fn minus_only_first(mut f: impl FnMut(&(usize, char)) -> bool) -> impl FnMut(&(usize ,char)) -> bool {
+fn minus_only_first(
+    mut f: impl FnMut(&(usize, char)) -> bool,
+) -> impl FnMut(&(usize, char)) -> bool {
     return move |tup| {
         if tup.0 == 0 {
             tup.1 == '-' || f(tup)
         } else {
             f(tup)
         }
-    }
+    };
 }
 
 fn parse_hex(input: &str) -> IResult<&str, &str> {
-    match input.chars().enumerate().take_while(minus_only_first(|(i, c)| c.is_ascii_hexdigit())).last() {
-        Some((i, c)) => if i == 0 && c == '-' { Err(nom::Err::Incomplete(nom::Needed::Unknown)) } else { Ok((&input[i+1..], &input[0..i+1])) },
-        None => Err(nom::Err::Error(make_error(input, ErrorKind::HexDigit)))
+    match input
+        .chars()
+        .enumerate()
+        .take_while(minus_only_first(|(i, c)| c.is_ascii_hexdigit()))
+        .last()
+    {
+        Some((i, c)) => {
+            if i == 0 && c == '-' {
+                Err(nom::Err::Incomplete(nom::Needed::Unknown))
+            } else {
+                Ok((&input[i + 1..], &input[0..i + 1]))
+            }
+        }
+        None => Err(nom::Err::Error(make_error(input, ErrorKind::HexDigit))),
     }
 }
 
@@ -42,23 +55,56 @@ fn is_oct_digit(c: char) -> bool {
 }
 
 fn parse_oct(input: &str) -> IResult<&str, &str> {
-    match input.chars().enumerate().take_while(minus_only_first(|(i, c)| is_oct_digit(*c))).last() {
-        Some((i, c)) => if i == 0 && c == '-' { Err(nom::Err::Incomplete(nom::Needed::Unknown)) } else { Ok((&input[i+1..], &input[0..i+1])) },
-        None => Err(nom::Err::Error(make_error(input, ErrorKind::OctDigit)))
+    match input
+        .chars()
+        .enumerate()
+        .take_while(minus_only_first(|(i, c)| is_oct_digit(*c)))
+        .last()
+    {
+        Some((i, c)) => {
+            if i == 0 && c == '-' {
+                Err(nom::Err::Incomplete(nom::Needed::Unknown))
+            } else {
+                Ok((&input[i + 1..], &input[0..i + 1]))
+            }
+        }
+        None => Err(nom::Err::Error(make_error(input, ErrorKind::OctDigit))),
     }
 }
 
 fn parse_bin(input: &str) -> IResult<&str, &str> {
-    match input.chars().enumerate().take_while(minus_only_first(|(i, c)| *c == '1' || *c == '0')).last() {
-        Some((i, c)) => if i == 0 && c == '-' { Err(nom::Err::Incomplete(nom::Needed::Unknown)) } else {  Ok((&input[i+1..], &input[0..i+1])) },
-        None => Err(nom::Err::Error(make_error(input, ErrorKind::Digit)))
+    match input
+        .chars()
+        .enumerate()
+        .take_while(minus_only_first(|(i, c)| *c == '1' || *c == '0'))
+        .last()
+    {
+        Some((i, c)) => {
+            if i == 0 && c == '-' {
+                Err(nom::Err::Incomplete(nom::Needed::Unknown))
+            } else {
+                Ok((&input[i + 1..], &input[0..i + 1]))
+            }
+        }
+        None => Err(nom::Err::Error(make_error(input, ErrorKind::Digit))),
     }
 }
 
 fn parse_dec(input: &str) -> IResult<&str, &str> {
-    match input.chars().enumerate().take_while(minus_only_first(|(i, c)| c.is_ascii_digit())).last() {
-        Some((i, c)) => if i == 0 && c == '-' { Err(nom::Err::Incomplete(nom::Needed::Unknown)) } else { Ok((&input[i+1..], &input[0..i+1])) },
-        None => Err(nom::Err::Error(make_error(input, ErrorKind::Digit)))
+    match input
+        .chars()
+        .enumerate()
+        .take_while(minus_only_first(|(i, c)| c.is_ascii_digit()))
+        .last()
+    {
+        Some((i, c)) => {
+            if i == 0 && c == '-' {
+                Err(nom::Err::Incomplete(nom::Needed::Unknown))
+            } else {
+                Ok((&input[i + 1..], &input[0..i + 1]))
+            }
+        }
+        None => Err(nom::Err::Error(make_error(input, ErrorKind::Digit))),
     }
 }
 
@@ -87,8 +133,7 @@ pub fn parse_litval<'a>(input: &'a str) -> IResult<&'a str, LitVal> {
 }
 
 fn parse_info(input: &str) -> IResult<&str, Info> {
-    let (rest, info_str) = preceded(tag("&"), delimited(tag("["), is_not("]"), tag("]")))(input)?;
-
+    let (rest, info_str) = preceded(tag("@"), delimited(tag("["), is_not("]"), tag("]")))(input)?;
     Ok((rest, info_str.to_string()))
 }
 
@@ -167,12 +212,8 @@ pub fn parse_fixed_point_bits(input: &str) -> IResult<&str, usize> {
 
 #[cfg(test)]
 mod test {
-    use super::{
-        parse_litval
-    };
-    use crate::{
-        LitVal
-    };
+    use super::{parse_infos, parse_litval};
+    use crate::LitVal;
 
     #[test]
     pub fn test_parse_litval_valid() {
@@ -188,7 +229,6 @@ mod test {
 
         let (_, res) = parse_litval(hex_2).unwrap();
         assert_eq!(LitVal::Hex("-d4Cf".into()), res);
-
 
         let oct_0 = "o7";
         let oct_1 = "o-01137";
@@ -229,7 +269,7 @@ mod test {
     #[test]
     fn parse_litval_invalid() {
         let mut reses = Vec::new();
-        
+
         reses.push(parse_litval("deadbeef"));
         reses.push(parse_litval("hpeef"));
         reses.push(parse_litval("hhead"));
@@ -240,10 +280,20 @@ mod test {
 
         for (i, res) in reses.iter().enumerate() {
             if let Ok((rest, res)) = res {
-                panic!("Expected test {} to fail, got ({}, {:#?}) instead", i, rest, res);
+                panic!(
+                    "Expected test {} to fail, got ({}, {:#?}) instead",
+                    i, rest, res
+                );
             }
         }
     }
 
+    #[test]
+    fn parse_info() {
+        let res = parse_infos("@[hi]@[howdy] @[hello]   ,   @[hello]").unwrap();
+        assert_eq!(res, vec!["hi", "howdy", "hello"]);
 
+        let res = parse_infos("@[yo] ,  @[wassup]").unwrap();
+        assert_eq!(res, vec!["yo", "wassup"])
+    }
 }
