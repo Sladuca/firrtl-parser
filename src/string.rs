@@ -32,7 +32,7 @@ fn minus_only_first(mut f: impl FnMut(&(usize, char)) -> bool) -> impl FnMut(&(u
 
 fn parse_hex(input: &str) -> IResult<&str, &str> {
     match input.chars().enumerate().take_while(minus_only_first(|(i, c)| c.is_ascii_hexdigit())).last() {
-        Some((i, _)) =>  Ok((&input[i+1..], &input[0..i+1])),
+        Some((i, c)) => if i == 0 && c == '-' { Err(nom::Err::Incomplete(nom::Needed::Unknown)) } else { Ok((&input[i+1..], &input[0..i+1])) },
         None => Err(nom::Err::Error(make_error(input, ErrorKind::HexDigit)))
     }
 }
@@ -43,21 +43,21 @@ fn is_oct_digit(c: char) -> bool {
 
 fn parse_oct(input: &str) -> IResult<&str, &str> {
     match input.chars().enumerate().take_while(minus_only_first(|(i, c)| is_oct_digit(*c))).last() {
-        Some((i, _)) => Ok((&input[i+1..], &input[0..i+1])),
+        Some((i, c)) => if i == 0 && c == '-' { Err(nom::Err::Incomplete(nom::Needed::Unknown)) } else { Ok((&input[i+1..], &input[0..i+1])) },
         None => Err(nom::Err::Error(make_error(input, ErrorKind::OctDigit)))
     }
 }
 
 fn parse_bin(input: &str) -> IResult<&str, &str> {
     match input.chars().enumerate().take_while(minus_only_first(|(i, c)| *c == '1' || *c == '0')).last() {
-        Some((i, _)) => Ok((&input[i+1..], &input[0..i+1])),
+        Some((i, c)) => if i == 0 && c == '-' { Err(nom::Err::Incomplete(nom::Needed::Unknown)) } else {  Ok((&input[i+1..], &input[0..i+1])) },
         None => Err(nom::Err::Error(make_error(input, ErrorKind::Digit)))
     }
 }
 
 fn parse_dec(input: &str) -> IResult<&str, &str> {
     match input.chars().enumerate().take_while(minus_only_first(|(i, c)| c.is_ascii_digit())).last() {
-        Some((i, _)) => Ok((&input[i+1..], &input[0..i+1])),
+        Some((i, c)) => if i == 0 && c == '-' { Err(nom::Err::Incomplete(nom::Needed::Unknown)) } else { Ok((&input[i+1..], &input[0..i+1])) },
         None => Err(nom::Err::Error(make_error(input, ErrorKind::Digit)))
     }
 }
@@ -69,17 +69,17 @@ pub fn parse_litval<'a>(input: &'a str) -> IResult<&'a str, LitVal> {
     };
 
     let bin = |input: &'a str| {
-        let (rest, s) = parse_bin(input)?;
+        let (rest, s) = preceded(tag("b"), parse_bin)(input)?;
         Ok((rest, LitVal::Bin(s.to_string())))
     };
 
     let hex = |input: &'a str| {
-        let (rest, s) = parse_hex(input)?;
+        let (rest, s) = preceded(tag("h"), parse_hex)(input)?;
         Ok((rest, LitVal::Hex(s.to_string())))
     };
 
     let oct = |input: &'a str| {
-        let (rest, s) = parse_oct(input)?;
+        let (rest, s) = preceded(tag("o"), parse_oct)(input)?;
         Ok((rest, LitVal::Oct(s.to_string())))
     };
 
