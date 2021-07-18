@@ -9,14 +9,14 @@ pub type IDStr = String;
 /// FIRRTL info item, without the surrounding `@[]`.
 pub type Info = String;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Circuit {
     id: IDStr,
     infos: Vec<Info>,
     modules: Vec<Module>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Module {
     id: IDStr,
     infos: Vec<Info>,
@@ -24,7 +24,7 @@ pub struct Module {
     stmt: Stmt,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Port {
     direction: Direction,
     id: IDStr,
@@ -32,13 +32,13 @@ pub struct Port {
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Direction {
     I,
     O,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     UInt {
         width: Option<usize>,
@@ -63,20 +63,20 @@ pub enum Type {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Field {
     Flipped(FieldInner),
     Default(FieldInner),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FieldInner {
     id: IDStr,
     ty: Type,
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     Wire(Wire),
     Reg(Reg),
@@ -94,14 +94,14 @@ pub enum Stmt {
     Group(Vec<Stmt>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Wire {
     id: IDStr,
     ty: Type,
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Reg {
     id: IDStr,
     ty: Type,
@@ -110,20 +110,20 @@ pub struct Reg {
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RegInit {
     signal: Expr,
     val: Expr,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Mem {
     id: IDStr,
     infos: Vec<Info>,
     opts: MemOpts,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MemOpts {
     data_type: Type,
     depth: usize,
@@ -135,46 +135,46 @@ pub struct MemOpts {
     rw_ports: Vec<IDStr>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ReadUnderWrite {
     Old,
     New,
     Undefined,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Instance {
     id: String,
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Node {
     id: String,
     rhs: Expr,
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Connect {
     lhs: Expr,
     rhs: Expr,
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Invalidate {
     lhs: Expr,
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Attatch {
     exprs: Expr,
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Conditional {
     cond: Expr,
     infos: Vec<Info>,
@@ -182,7 +182,7 @@ pub struct Conditional {
     if_false: Box<Stmt>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Stop {
     clk: Expr,
     halt: Expr,
@@ -191,7 +191,7 @@ pub struct Stop {
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Printf {
     clk: Expr,
     print_signal: Expr,
@@ -199,12 +199,12 @@ pub struct Printf {
     params: Vec<Expr>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Empty {
     infos: Vec<Info>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Literal(Literal),
     Ref(IDStr),
@@ -216,13 +216,13 @@ pub enum Expr {
     PrimOp(PrimOpExpr),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
     UInt(LitVal, Option<usize>),
     SInt(LitVal, Option<usize>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum LitVal {
     Hex(String),
     Oct(String),
@@ -230,7 +230,7 @@ pub enum LitVal {
     Dec(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PrimOpExpr {
     Add(Box<Expr>, Box<Expr>),
     Sub(Box<Expr>, Box<Expr>),
@@ -270,7 +270,7 @@ pub enum PrimOpExpr {
     SetP(Box<Expr>, usize),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, PartialEq, Clone)]
 pub enum PrimOp {
     Add,
     Sub,

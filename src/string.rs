@@ -5,48 +5,77 @@ use nom::{
     bytes::complete::{is_not, tag, take_while},
     character::complete::digit1,
     combinator::{opt, success, value},
-    error::ErrorKind,
+    error::{ErrorKind, make_error},
     multi::separated_list0,
     regexp::str::{re_capture, re_find},
-    sequence::{delimited, preceded, terminated},
+    sequence::{delimited, preceded, terminated, pair},
     IResult,
 };
 
 use lazy_static::lazy_static;
 use regex::Regex;
 
-lazy_static! {
-    pub static ref HEX_REGEX: Regex = Regex::new(r"h(-?[a-fA-F0-9]*)").unwrap();
-    pub static ref OCT_REGEX: Regex = Regex::new(r"o(-?[0-7]*)").unwrap();
-    pub static ref BIN_REGEX: Regex = Regex::new(r"o(-?[01]*)").unwrap();
-    pub static ref DEC_REGEX: Regex = Regex::new(r"(-?)#([0-9]*)").unwrap();
-    pub static ref WHITESPACE_REGEX: Regex = Regex::new(r"[, ]+").unwrap();
-    pub static ref ID_REGEX: Regex = Regex::new(r"[a-zA-Z_][\w_]*").unwrap();
+fn minus_only_first(mut f: impl FnMut(&(usize, char)) -> bool) -> impl FnMut(&(usize ,char)) -> bool {
+    return move |tup| {
+        if tup.0 == 0 {
+            tup.1 == '-' || f(tup)
+        } else {
+            f(tup)
+        }
+    }
+}
+
+fn parse_hex(input: &str) -> IResult<&str, &str> {
+    match input.chars().enumerate().take_while(minus_only_first(|(i, c)| c.is_ascii_hexdigit())).last() {
+        Some((i, _)) =>  Ok((&input[i+1..], &input[0..i+1])),
+        None => Err(nom::Err::Error(make_error(input, ErrorKind::HexDigit)))
+    }
+}
+
+fn is_oct_digit(c: char) -> bool {
+    c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7'
+}
+
+fn parse_oct(input: &str) -> IResult<&str, &str> {
+    match input.chars().enumerate().take_while(minus_only_first(|(i, c)| is_oct_digit(*c))).last() {
+        Some((i, _)) => Ok((&input[i+1..], &input[0..i+1])),
+        None => Err(nom::Err::Error(make_error(input, ErrorKind::OctDigit)))
+    }
+}
+
+fn parse_bin(input: &str) -> IResult<&str, &str> {
+    match input.chars().enumerate().take_while(minus_only_first(|(i, c)| *c == '1' || *c == '0')).last() {
+        Some((i, _)) => Ok((&input[i+1..], &input[0..i+1])),
+        None => Err(nom::Err::Error(make_error(input, ErrorKind::Digit)))
+    }
+}
+
+fn parse_dec(input: &str) -> IResult<&str, &str> {
+    match input.chars().enumerate().take_while(minus_only_first(|(i, c)| c.is_ascii_digit())).last() {
+        Some((i, _)) => Ok((&input[i+1..], &input[0..i+1])),
+        None => Err(nom::Err::Error(make_error(input, ErrorKind::Digit)))
+    }
 }
 
 pub fn parse_litval<'a>(input: &'a str) -> IResult<&'a str, LitVal> {
     let dec = |input: &'a str| {
-        let inner = re_capture::<'a>(DEC_REGEX.clone());
-        let (rest, groups) = inner(input)?;
-        Ok((rest, LitVal::Dec(groups[0].to_string())))
+        let (rest, s) = parse_dec(input)?;
+        Ok((rest, LitVal::Dec(s.to_string())))
     };
 
     let bin = |input: &'a str| {
-        let inner = re_capture::<'a>(BIN_REGEX.clone());
-        let (rest, groups) = inner(input)?;
-        Ok((rest, LitVal::Bin(groups[0].to_string())))
+        let (rest, s) = parse_bin(input)?;
+        Ok((rest, LitVal::Bin(s.to_string())))
     };
 
     let hex = |input: &'a str| {
-        let inner = re_capture::<'a>(HEX_REGEX.clone());
-        let (rest, groups) = inner(input)?;
-        Ok((rest, LitVal::Hex(groups[0].to_string())))
+        let (rest, s) = parse_hex(input)?;
+        Ok((rest, LitVal::Hex(s.to_string())))
     };
 
     let oct = |input: &'a str| {
-        let inner = re_capture::<'a>(OCT_REGEX.clone());
-        let (rest, groups) = inner(input)?;
-        Ok((rest, LitVal::Oct(groups[0].to_string())))
+        let (rest, s) = parse_oct(input)?;
+        Ok((rest, LitVal::Oct(s.to_string())))
     };
 
     alt((bin, hex, oct, dec))(input)
@@ -131,19 +160,85 @@ pub fn parse_fixed_point_bits(input: &str) -> IResult<&str, usize> {
     delimited(tag("<"), parse_width, tag(">"))(input)
 }
 
-// pub fn module(input: &str) -> IResult<&str, Module> {
-// 	let (rest, id) = preceeded(
-// 		tag("module"),
-// 		preceded(
-// 			space0,
-// 			terminated(
-// 				parse_id,
-// 				tag(":")
-// 			)
-// 		)
-// 	)(input)?;
+#[cfg(test)]
+mod test {
+    use super::{
+        parse_litval
+    };
+    use crate::{
+        LitVal
+    };
 
-// 	let (res, infos) =
+    #[test]
+    pub fn test_parse_litval_valid() {
+        let hex_0 = "h0";
+        let hex_1 = "h80A51";
+        let hex_2 = "h-d4Cf";
 
-// 	let (rest, contents) =
-// }
+        let (_, res) = parse_litval(hex_0).unwrap();
+        assert_eq!(LitVal::Hex("0".into()), res);
+
+        let (_, res) = parse_litval(hex_1).unwrap();
+        assert_eq!(LitVal::Hex("80A51".into()), res);
+
+        let (_, res) = parse_litval(hex_2).unwrap();
+        assert_eq!(LitVal::Hex("-d4Cf".into()), res);
+
+
+        let oct_0 = "o7";
+        let oct_1 = "o-01137";
+        let oct_2 = "o-1234567";
+
+        let (_, res) = parse_litval(oct_0).unwrap();
+        assert_eq!(LitVal::Oct("7".into()), res);
+
+        let (_, res) = parse_litval(oct_1).unwrap();
+        assert_eq!(LitVal::Oct("-01137".into()), res);
+
+        let (_, res) = parse_litval(oct_2).unwrap();
+        assert_eq!(LitVal::Oct("-1234567".into()), res);
+
+        let bin_0 = "b01101010101010011100100";
+        let bin_1 = "b-1000100110101";
+
+        let (_, res) = parse_litval(bin_0).unwrap();
+        assert_eq!(LitVal::Bin("01101010101010011100100".into()), res);
+
+        let (_, res) = parse_litval(bin_1).unwrap();
+        assert_eq!(LitVal::Bin("-1000100110101".into()), res);
+
+        let dec_0 = "1234";
+        let dec_1 = "-1";
+        let dec_2 = "-45";
+
+        let (_, res) = parse_litval(dec_0).unwrap();
+        assert_eq!(LitVal::Dec("1234".into()), res);
+
+        let (_, res) = parse_litval(dec_1).unwrap();
+        assert_eq!(LitVal::Dec("-1".into()), res);
+
+        let (_, res) = parse_litval(dec_2).unwrap();
+        assert_eq!(LitVal::Dec("-45".into()), res);
+    }
+
+    #[test]
+    fn parse_litval_invalid() {
+        let mut reses = Vec::new();
+        
+        reses.push(parse_litval("deadbeef"));
+        reses.push(parse_litval("hpeef"));
+        reses.push(parse_litval("hhead"));
+        reses.push(parse_litval("o8"));
+        reses.push(parse_litval("b2"));
+        reses.push(parse_litval("-hdeadbeef"));
+        reses.push(parse_litval("-b01"));
+
+        for (i, res) in reses.iter().enumerate() {
+            if let Ok((rest, res)) = res {
+                panic!("Expected test {} to fail, got ({}, {:#?}) instead", i, rest, res);
+            }
+        }
+    }
+
+
+}
