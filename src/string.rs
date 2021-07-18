@@ -15,6 +15,11 @@ use nom::{
 use lazy_static::lazy_static;
 use regex::Regex;
 
+lazy_static! {
+    pub static ref WHITESPACE_REGEX: Regex = Regex::new(r"[, ]+").unwrap();
+    pub static ref ID_REGEX: Regex = Regex::new(r"[a-zA-Z_][\w_]*").unwrap();
+}
+
 fn minus_only_first(mut f: impl FnMut(&(usize, char)) -> bool) -> impl FnMut(&(usize ,char)) -> bool {
     return move |tup| {
         if tup.0 == 0 {
