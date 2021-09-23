@@ -1,6 +1,6 @@
 use crate::{
     string::{
-        parse_decimal_usize, parse_fixed_point_bits, parse_id, parse_infos, parse_width,
+        parse_decimal_usize, parse_fixed_point_bits, parse_id, parse_width,
         WHITESPACE_REGEX,
     },
     Field, FieldInner, Type,
@@ -11,10 +11,11 @@ use nom::{
     bytes::complete::tag,
     combinator::{opt, success},
     multi::separated_list1,
-    regexp::str::re_find,
     sequence::{delimited, preceded, terminated, tuple},
     IResult,
 };
+
+use nom_regex::str::re_find;
 
 pub fn parse_uint_type(input: &str) -> IResult<&str, Type> {
     let (rest, width) = preceded(tag("UInt"), opt(parse_width))(input)?;
@@ -45,16 +46,15 @@ pub fn parse_analog_type(input: &str) -> IResult<&str, Type> {
 }
 
 pub fn parse_field(input: &str) -> IResult<&str, Field> {
-    let (rest, (flip, id, ty, infos)) = tuple((
+    let (rest, (flip, id, ty)) = tuple((
         opt(tag("flip")),
         terminated(parse_id, tag(": ")),
-        parse_type,
-        parse_infos,
+        parse_type
     ))(input)?;
 
     let res = match flip {
-        Some(_) => Field::Flipped(FieldInner { id, ty, infos }),
-        None => Field::Default(FieldInner { id, ty, infos }),
+        Some(_) => Field::Flipped(FieldInner { id, ty }),
+        None => Field::Default(FieldInner { id, ty }),
     };
 
     Ok((rest, res))

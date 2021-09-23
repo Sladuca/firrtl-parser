@@ -1,4 +1,4 @@
-use crate::{IDStr, Info, LitVal, Module, PrimOp};
+use crate::{IDStr, LitVal, Module, PrimOp};
 
 use nom::{
     branch::alt,
@@ -6,11 +6,11 @@ use nom::{
     character::complete::digit1,
     combinator::{opt, success, value},
     error::{make_error, ErrorKind},
-    multi::separated_list0,
-    regexp::str::{re_capture, re_find},
+    multi::{many1_count, separated_list0},
     sequence::{delimited, pair, preceded, terminated},
-    IResult,
+    IResult, Parser,
 };
+use nom_regex::str::{re_capture, re_find};
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -132,13 +132,13 @@ pub fn parse_litval<'a>(input: &'a str) -> IResult<&'a str, LitVal> {
     alt((bin, hex, oct, dec))(input)
 }
 
-fn parse_info(input: &str) -> IResult<&str, Info> {
-    let (rest, info_str) = preceded(tag("@"), delimited(tag("["), is_not("]"), tag("]")))(input)?;
-    Ok((rest, info_str.to_string()))
+fn whitespace_char(input: &str) -> IResult<&str, &str> {
+    tag(" ").or(tag(",")).parse(input)
 }
 
-pub fn parse_infos(input: &str) -> IResult<&str, Vec<Info>> {
-    separated_list0(opt(re_find(WHITESPACE_REGEX.clone())), parse_info)(input)
+pub fn whitespace(input: &str) -> IResult<&str, ()> {
+    let (rest, _count) = many1_count(whitespace_char)(input)?;
+    Ok((rest, ()))
 }
 
 pub fn parse_id(input: &str) -> IResult<&str, IDStr> {
@@ -212,7 +212,7 @@ pub fn parse_fixed_point_bits(input: &str) -> IResult<&str, usize> {
 
 #[cfg(test)]
 mod test {
-    use super::{parse_infos, parse_litval};
+    use super::{parse_litval};
     use crate::LitVal;
 
     #[test]
@@ -286,14 +286,5 @@ mod test {
                 );
             }
         }
-    }
-
-    #[test]
-    fn parse_info() {
-        let res = parse_infos("@[hi]@[howdy] @[hello]   ,   @[hello]").unwrap();
-        assert_eq!(res, vec!["hi", "howdy", "hello"]);
-
-        let res = parse_infos("@[yo] ,  @[wassup]").unwrap();
-        assert_eq!(res, vec!["yo", "wassup"])
     }
 }

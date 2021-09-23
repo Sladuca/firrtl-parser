@@ -6,20 +6,15 @@ mod types;
 // [a-zA-Z_][\w_]+
 pub type IDStr = String;
 
-/// FIRRTL info item, without the surrounding `@[]`.
-pub type Info = String;
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Circuit {
     id: IDStr,
-    infos: Vec<Info>,
     modules: Vec<Module>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Module {
     id: IDStr,
-    infos: Vec<Info>,
     ports: Vec<Port>,
     stmt: Stmt,
 }
@@ -29,7 +24,6 @@ pub struct Port {
     direction: Direction,
     id: IDStr,
     ty: Type,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -73,7 +67,6 @@ pub enum Field {
 pub struct FieldInner {
     id: IDStr,
     ty: Type,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -98,7 +91,6 @@ pub enum Stmt {
 pub struct Wire {
     id: IDStr,
     ty: Type,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -107,7 +99,6 @@ pub struct Reg {
     ty: Type,
     clk: IDStr,
     init: RegInit,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -119,7 +110,6 @@ pub struct RegInit {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Mem {
     id: IDStr,
-    infos: Vec<Info>,
     opts: MemOpts,
 }
 
@@ -145,39 +135,33 @@ pub enum ReadUnderWrite {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Instance {
     id: String,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {
     id: String,
     rhs: Expr,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Connect {
     lhs: Expr,
     rhs: Expr,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Invalidate {
     lhs: Expr,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Attatch {
     exprs: Expr,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Conditional {
     cond: Expr,
-    infos: Vec<Info>,
     if_true: Box<Stmt>,
     if_false: Box<Stmt>,
 }
@@ -188,7 +172,6 @@ pub struct Stop {
     halt: Expr,
     exit_code: i32,
     id: Option<IDStr>,
-    infos: Vec<Info>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -200,9 +183,7 @@ pub struct Printf {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Empty {
-    infos: Vec<Info>,
-}
+pub struct Empty {}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
