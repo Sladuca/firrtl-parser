@@ -154,7 +154,7 @@ pub fn parse_primop_name(input: &str) -> IResult<&str, PrimOp> {
     let _mod = preceded(tag("mod"), success(PrimOp::Mod));
     let lt = preceded(tag("lt"), success(PrimOp::Lt));
     let gt = preceded(tag("gt"), success(PrimOp::Gt));
-    let geq = preceded(tag("Geq"), success(PrimOp::Geq));
+    let geq = preceded(tag("geq"), success(PrimOp::Geq));
     let eq = preceded(tag("eq"), success(PrimOp::Eq));
     let neq = preceded(tag("neq"), success(PrimOp::Neq));
     let pad = preceded(tag("pad"), success(PrimOp::Pad));
@@ -188,7 +188,7 @@ pub fn parse_primop_name(input: &str) -> IResult<&str, PrimOp> {
         alt((lt, gt, geq, eq, neq)),
         alt((pad, as_uint, as_sint, as_fixed, as_clock, cvt)),
         alt((
-            shl, shr, dyn_shl, dyn_shr, neg, not, and, or, xor, andr, orr, xorr,
+            shl, shr, dyn_shl, dyn_shr, neg, not, and, andr, orr, xorr, or, xor
         )),
         alt((concat, bits, head, tail)),
         alt((incp, decp, setp)),
@@ -212,8 +212,10 @@ pub fn parse_fixed_point_bits(input: &str) -> IResult<&str, usize> {
 
 #[cfg(test)]
 mod test {
-    use super::{parse_litval};
-    use crate::LitVal;
+    use nom::IResult;
+
+    use super::{parse_litval, parse_primop_name};
+    use crate::{LitVal, PrimOp};
 
     #[test]
     pub fn test_parse_litval_valid() {
@@ -286,5 +288,26 @@ mod test {
                 );
             }
         }
+    }
+
+    #[test]
+    fn parse_primop() {
+        let (_, res) = parse_primop_name("add").unwrap();
+        assert_eq!(PrimOp::Add, res);
+
+        let (_, res) = parse_primop_name("mod").unwrap();
+        assert_eq!(PrimOp::Mod, res);
+
+        let (_, res) = parse_primop_name("lt").unwrap();
+        assert_eq!(PrimOp::Lt, res);
+
+        let (_, res) = parse_primop_name("geq").unwrap();
+        assert_eq!(PrimOp::Geq, res);
+
+        let (_, res) = parse_primop_name("asFixed").unwrap();
+        assert_eq!(PrimOp::AsFixed, res);
+
+        let (_, res) = parse_primop_name("xorr").unwrap();
+        assert_eq!(PrimOp::Xorr, res);
     }
 }
