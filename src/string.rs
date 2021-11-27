@@ -211,8 +211,7 @@ pub fn parse_fixed_point_bits(input: &str) -> IResult<&str, usize> {
 }
 
 #[cfg(test)]
-mod test {
-    use nom::IResult;
+mod tests {
 
     use super::{parse_litval, parse_primop_name};
     use crate::{LitVal, PrimOp};

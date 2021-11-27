@@ -84,12 +84,52 @@ pub fn parse_vector(input: &str) -> IResult<&str, Type> {
 
 pub fn parse_type(input: &str) -> IResult<&str, Type> {
     alt((
-        parse_uint_type,
-        parse_sint_type,
-        parse_fixed_point_type,
-        parse_clock_type,
-        parse_analog_type,
         parse_bundle,
         parse_vector,
+        parse_fixed_point_type,
+        parse_uint_type,
+        parse_sint_type,
+        parse_clock_type,
+        parse_analog_type,
     ))(input)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Field, FieldInner, Type};
+
+    use super::parse_type;
+
+    #[test]
+    fn parse_types() {
+        let (_ , res) = parse_type("UInt<10>").unwrap();
+        assert_eq!(res, Type::UInt { width: Some(10) });
+
+        let (_, res) = parse_type("SInt").unwrap();
+        assert_eq!(res, Type::SInt { width: None });
+
+        let (_, res) = parse_type("Fixed<5>").unwrap();
+        assert_eq!(res, Type::Fixed { width: Some(5), point: None });
+        
+        let (_, res) = parse_type("Fixed<<5>>").unwrap();
+        assert_eq!(res, Type::Fixed { point: Some(5), width: None });
+
+        let (_, res) = parse_type("Clock").unwrap();
+        assert_eq!(res, Type::Clock);
+
+        let (_, res) = parse_type("SInt[42]").unwrap();
+        assert_eq!(res, Type::Vector { ty: Box::new(Type::SInt { width: None }), len: 42 });
+
+        let (_, res) = parse_type("{ flip foo: SInt, bar: UInt[3] }").unwrap();
+        assert_eq!(res, Type::Bundle { 
+            fields: vec![
+                Field::Flipped(FieldInner { id: "foo".to_string(), ty: Type::SInt { width: None }}),
+                Field::Default(FieldInner { id: "bar".to_string(), ty: Type::Vector { ty: Box::new(Type::UInt { width: None }), len: 3 }})
+            ]
+        });
+
+        assert!(parse_type("Uint<10>").is_err());
+        assert!(parse_type("UInt<<10>>").is_err());
+        assert!(parse_type("UInt[]").is_err());
+    }
 }
